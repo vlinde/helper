@@ -1,10 +1,10 @@
 <?php
 
-namespace vlinde\helper;
+namespace Vlinde\Helper;
 
 use Illuminate\Support\ServiceProvider;
 
-class helperServiceProvider extends ServiceProvider
+class HelperServiceProvider extends ServiceProvider
 {
     /**
      * Perform post-registration booting of services.
@@ -35,7 +35,7 @@ class helperServiceProvider extends ServiceProvider
 
         // Register the service the package provides.
         $this->app->singleton('helper', function ($app) {
-            return new helper;
+            return new Helper;
         });
     }
 

@@ -33,10 +33,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "vlinde\\helper\\helperServiceProvider"
+                "Vlinde\\Helper\\HelperServiceProvider"
             ],
             "aliases": {
-                "helper": "vlinde\\helper\\Facades\\helper"
+                "helper": "Vlinde\\Helper\\Facades\\Helper"
             }
         }
     }

@@ -1,10 +1,10 @@
 <?php
 
-namespace vlinde\helper\Facades;
+namespace Vlinde\Helper\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
-class helper extends Facade
+class Helper extends Facade
 {
     /**
      * Get the registered name of the component.

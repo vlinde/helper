@@ -1,15 +1,12 @@
 <?php
 
-namespace vlinde\helper\Providers;
+namespace Vlinde\Helper\Providers;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
-
 use stdClass;
 
-use function GuzzleHttp\Psr7\str;
-
-class HelperProvider extends ServiceProvider
+class Helper extends ServiceProvider
 {
     public static $DOW_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     // copied from identifier function
@@ -107,57 +104,6 @@ class HelperProvider extends ServiceProvider
         'c l'
     ];
 
-    public static function getValueBetweenStrings($startDelimiter, $endDelimiter, $str)
-    {
-        $contents = [];
-        $startDelimiterLength = strlen($startDelimiter);
-        $endDelimiterLength = strlen($endDelimiter);
-        $startFrom = $contentStart = $contentEnd = 0;
-        while (false !== ($contentStart = strpos($str, $startDelimiter,
-                $startFrom))) {
-            $contentStart += $startDelimiterLength;
-            $contentEnd = strpos($str, $endDelimiter, $contentStart);
-            if (false === $contentEnd) {
-                break;
-            }
-            $contents[] = substr($str, $contentStart,
-                $contentEnd - $contentStart);
-            $startFrom = $contentEnd + $endDelimiterLength;
-        }
-        if (!strpos($str, $startDelimiter)) {
-            return $str;
-        } else {
-            return $contents;
-        }
-    }
-
-    public static function getBefore($delimiter, $string)
-    {
-        if (!is_array($string)) {
-            $exploded = explode($delimiter, $string)[0];
-        } else {
-            foreach ($string as $single) {
-                $exploded[] = explode($delimiter, $single)[0];
-            }
-        }
-
-        if (empty($exploded)) {
-            $exploded = null;
-        }
-
-        return $exploded;
-    }
-
-    public static function getAfter($delimiter, $string)
-    {
-        $exploded = explode($delimiter, $string);
-        if (isset($exploded[1]) && !empty($exploded[1])) {
-            return $exploded[1];
-        }
-
-        return $exploded[0];
-    }
-
     public static function fixPairedValues($params)
     {
         if (count($params['array']) % 2 != 0) {
@@ -207,6 +153,60 @@ class HelperProvider extends ServiceProvider
         return $fixedArray;
     }
 
+    public static function cleanStr($params)
+    {
+        $string = $params['string'];
+        $type = isset($params['type']) ? $params['type'] : 'value';
+        if (!isset($params['html']) ? $html = false : $html = true) {
+            //
+        }
+
+        switch ($type) {
+            case 'attr':
+                if ($html) {
+                    $string = mb_convert_encoding(pack('H*', $string[1]), 'UTF-8', 'UCS-2BE');
+                }
+                $string = str_replace(["\n", "\r", "\t", '&nbsp;'], '',
+                    $string);
+                $string = preg_replace('!\s+!', ' ', $string);
+                $string = trim($string);
+                break;
+
+            case 'value':
+                $string = strip_tags($string, '<br>');
+                $string = str_replace("\n", ' ', $string);
+                if ($html) {
+                    $string = mb_convert_encoding(pack('H*', $string[1]), 'UTF-8', 'UCS-2BE');
+                }
+                $string = str_replace(["\n", "\r", "\t", '&nbsp;'], '', $string);
+                $string = preg_replace('!\s+!', ' ', $string);
+                $string = trim($string);
+                $string = str_replace('<br> ', '<br>', $string);
+                $string = str_replace(' <br>', '<br>', $string);
+                break;
+
+            case 'array':
+                foreach ($string as $key => $single) {
+                    $single = strip_tags($single, '<br>');
+                    $single = str_replace("\n", ' ', $single);
+                    if ($html) {
+                        $string = htmlspecialchars($string, ENT_QUOTES, "UTF-8");
+                    }
+                    $single = str_replace(["\n", "\r", "\t", '&nbsp;'], '',
+                        $single);
+                    $single = preg_replace('!\s+!', ' ', $single);
+                    $single = str_replace('<br> ', '<br>', $single);
+                    $single = str_replace(' <br>', '<br>', $single);
+                    $string[$key] = $single;
+                }
+                unset($single);
+
+                break;
+        }
+
+        return $string;
+    }
+
     public static function fixOneValueArray($params)
     {
         $array = $params['array'];
@@ -254,21 +254,6 @@ class HelperProvider extends ServiceProvider
         }
 
         return $fixedArray;
-    }
-
-    public static function getProvider($project, $source)
-    {
-        $provider = 'app' . DIRECTORY_SEPARATOR . 'Providers' . DIRECTORY_SEPARATOR
-            . 'Projects' . DIRECTORY_SEPARATOR . ucfirst($project)
-            . DIRECTORY_SEPARATOR . ucfirst($source);
-        $provider_path = base_path($provider . '.php');
-//        dd($provider_path);
-        if (!\File::exists($provider_path)) {
-            die('The combination between source and project not found!');
-        } else {
-            $provider = ucfirst(str_replace(DIRECTORY_SEPARATOR, '\\', $provider));
-            return $provider;
-        }
     }
 
     public static function readData($request)
@@ -326,6 +311,48 @@ class HelperProvider extends ServiceProvider
 
         return $elements;
 
+    }
+
+    public static function getProvider($project, $source)
+    {
+        $provider = 'app' . DIRECTORY_SEPARATOR . 'Providers' . DIRECTORY_SEPARATOR
+            . 'Projects' . DIRECTORY_SEPARATOR . ucfirst($project)
+            . DIRECTORY_SEPARATOR . ucfirst($source);
+        $provider_path = base_path($provider . '.php');
+//        dd($provider_path);
+        if (!\File::exists($provider_path)) {
+            die('The combination between source and project not found!');
+        } else {
+            $provider = ucfirst(str_replace(DIRECTORY_SEPARATOR, '\\', $provider));
+            return $provider;
+        }
+    }
+
+    public static function getUrl($urls, $request)
+    {
+        $limit = '';
+        if (isset($request->from) && $request->from != 0) {
+            $limit .= '&skip=' . $request->from;
+        }
+        if (isset($request->to) && $request->to != 0 && isset($request->from)) {
+            $limit .= '&limit=' . ((int)$request->to - (int)$request->from);
+        } elseif (isset($request->to) && $request->to != 0) {
+            $limit .= '&limit=' . ((int)$request->to);
+        }
+        if (strpos($limit, "-")) {
+            $limit = str_replace('-', '', $limit);
+        }
+
+        if (array_key_exists($request->element, $urls)) {
+            $url_details = $urls[$request->element];
+            if ($url_details['limit']) {
+                $url_details['url'] .= $limit;
+            }
+
+            return $url_details;
+        }
+
+        return false;
     }
 
     public static function readStatistics($request)
@@ -445,33 +472,6 @@ class HelperProvider extends ServiceProvider
         }, func_get_args());
     }
 
-    public static function getUrl($urls, $request)
-    {
-        $limit = '';
-        if (isset($request->from) && $request->from != 0) {
-            $limit .= '&skip=' . $request->from;
-        }
-        if (isset($request->to) && $request->to != 0 && isset($request->from)) {
-            $limit .= '&limit=' . ((int)$request->to - (int)$request->from);
-        } elseif (isset($request->to) && $request->to != 0) {
-            $limit .= '&limit=' . ((int)$request->to);
-        }
-        if (strpos($limit, "-")) {
-            $limit = str_replace('-', '', $limit);
-        }
-
-        if (array_key_exists($request->element, $urls)) {
-            $url_details = $urls[$request->element];
-            if ($url_details['limit']) {
-                $url_details['url'] .= $limit;
-            }
-
-            return $url_details;
-        }
-
-        return false;
-    }
-
     public static function getEmailAddresses($string)
     {
 
@@ -529,60 +529,6 @@ class HelperProvider extends ServiceProvider
         }
 
         return $zip;
-    }
-
-    public static function cleanStr($params)
-    {
-        $string = $params['string'];
-        $type = isset($params['type']) ? $params['type'] : 'value';
-        if (!isset($params['html']) ? $html = false : $html = true) {
-            //
-        }
-
-        switch ($type) {
-            case 'attr':
-                if ($html) {
-                    $string = mb_convert_encoding(pack('H*', $string[1]), 'UTF-8', 'UCS-2BE');
-                }
-                $string = str_replace(["\n", "\r", "\t", '&nbsp;'], '',
-                    $string);
-                $string = preg_replace('!\s+!', ' ', $string);
-                $string = trim($string);
-                break;
-
-            case 'value':
-                $string = strip_tags($string, '<br>');
-                $string = str_replace("\n", ' ', $string);
-                if ($html) {
-                    $string = mb_convert_encoding(pack('H*', $string[1]), 'UTF-8', 'UCS-2BE');
-                }
-                $string = str_replace(["\n", "\r", "\t", '&nbsp;'], '', $string);
-                $string = preg_replace('!\s+!', ' ', $string);
-                $string = trim($string);
-                $string = str_replace('<br> ', '<br>', $string);
-                $string = str_replace(' <br>', '<br>', $string);
-                break;
-
-            case 'array':
-                foreach ($string as $key => $single) {
-                    $single = strip_tags($single, '<br>');
-                    $single = str_replace("\n", ' ', $single);
-                    if ($html) {
-                        $string = htmlspecialchars($string, ENT_QUOTES, "UTF-8");
-                    }
-                    $single = str_replace(["\n", "\r", "\t", '&nbsp;'], '',
-                        $single);
-                    $single = preg_replace('!\s+!', ' ', $single);
-                    $single = str_replace('<br> ', '<br>', $single);
-                    $single = str_replace(' <br>', '<br>', $single);
-                    $string[$key] = $single;
-                }
-                unset($single);
-
-                break;
-        }
-
-        return $string;
     }
 
     public static function cleanArray($params)
@@ -786,6 +732,16 @@ class HelperProvider extends ServiceProvider
         }
     }
 
+    public static function getAfter($delimiter, $string)
+    {
+        $exploded = explode($delimiter, $string);
+        if (isset($exploded[1]) && !empty($exploded[1])) {
+            return $exploded[1];
+        }
+
+        return $exploded[0];
+    }
+
     public static function translator($to_transalte, $element)
     {
         foreach ($to_transalte as $translate) {
@@ -808,6 +764,47 @@ class HelperProvider extends ServiceProvider
         }
 
         return $element;
+    }
+
+    public static function getBefore($delimiter, $string)
+    {
+        if (!is_array($string)) {
+            $exploded = explode($delimiter, $string)[0];
+        } else {
+            foreach ($string as $single) {
+                $exploded[] = explode($delimiter, $single)[0];
+            }
+        }
+
+        if (empty($exploded)) {
+            $exploded = null;
+        }
+
+        return $exploded;
+    }
+
+    public static function getValueBetweenStrings($startDelimiter, $endDelimiter, $str)
+    {
+        $contents = [];
+        $startDelimiterLength = strlen($startDelimiter);
+        $endDelimiterLength = strlen($endDelimiter);
+        $startFrom = $contentStart = $contentEnd = 0;
+        while (false !== ($contentStart = strpos($str, $startDelimiter,
+                $startFrom))) {
+            $contentStart += $startDelimiterLength;
+            $contentEnd = strpos($str, $endDelimiter, $contentStart);
+            if (false === $contentEnd) {
+                break;
+            }
+            $contents[] = substr($str, $contentStart,
+                $contentEnd - $contentStart);
+            $startFrom = $contentEnd + $endDelimiterLength;
+        }
+        if (!strpos($str, $startDelimiter)) {
+            return $str;
+        } else {
+            return $contents;
+        }
     }
 
     public static function unsetter($elementvalue, $element)
@@ -994,7 +991,6 @@ class HelperProvider extends ServiceProvider
         return $open_hours_exit;
     }
 
-
     public static function changeArrayValues($input, $values)
     {
         return isset($values[$input]) ? $values[$input] : null; //TODO need to be checked again if works everywhere
@@ -1029,7 +1025,7 @@ class HelperProvider extends ServiceProvider
                 $slug = $attribute;
                 if (strpos($text_val, $key_find) !== false) {
                     $text_val = str_replace($key_find, '', $text_val);
-                    $text_val = Convertor::cleanStr([
+                    $text_val = Helper::cleanStr([
                         'string' => $text_val,
                         'type' => 'value',
                     ]);
@@ -1062,6 +1058,103 @@ class HelperProvider extends ServiceProvider
         }
 
         return array_filter(array_map('trim', $replace_in_array));
+    }
+
+    public static function phone_cleaner($params)
+    {
+        if (empty($params['phones'])) {
+            return null;
+        }
+
+        foreach ($params['phones'] as $phone) {
+
+            $trans = [
+                "-" => "",
+                " " => "",
+                "/" => "",
+                "(" => "",
+                ")" => "",
+                "." => "",
+            ];
+
+            $phone = strtr($phone, $trans);
+
+            if(empty($phone)) {
+                continue;
+            }
+
+            if (!empty($params['country_isocode']) || !empty($params['country_name'])) {
+
+                if (isset($params['country_isocode'])) {
+                    $phone_prefix = Helper::info_countries(['isocode' => $params['country_isocode']]);
+                } else {
+                    $phone_prefix = Helper::info_countries(['name' => strtolower($params['country_name'])]);
+                }
+
+                if ($phone_prefix != 'COUNTRY_NOT_IN_LIST' && $phone_prefix != null) {
+                    $phone_prefix = $phone_prefix['prefix'];
+
+                    $count_prefix = strlen($phone_prefix);
+
+                    // if phone doesn't have a prefix
+                    if (substr($phone, 0, $count_prefix) != $phone_prefix) {
+                        // remove one zero from begine if exists
+                        if (substr($phone, 0, 1) == "0") {
+                            $phone = substr_replace($phone, '', 0, 1);
+                        }
+
+                        // remove double zero from begine if exists
+                        if (substr($phone, 0, 2) == "00") {
+                            $phone = substr_replace($phone, '', 0, 2);
+                        }
+
+                        // remove + form phone if exists
+                        if ((strpos($phone, '+') !== false)) {
+                            $phone = $phone = str_replace("+", "", $phone);
+                        }
+
+                        // add + to phone if prefix without + exists
+                        $new_phone_prefix = str_replace('+', '', $phone_prefix);
+
+                        if (substr($phone, 0, ($count_prefix - 1)) == $new_phone_prefix) {
+
+                            $phone = '+' . $phone;
+
+                        } else {
+                            // add prefix
+                            $phone = $phone_prefix . "" . $phone;
+                        }
+
+                        // remove nonumeric char except +
+                        $phone = preg_replace("/[^0-9+]/", "", $phone);
+                    }
+
+                    if($phone == $phone_prefix) {
+                        continue;
+                    }
+
+                    $phone = str_replace($phone_prefix, '(' . $phone_prefix . ')', $phone);
+
+                    unset($phone_prefix);
+                }
+
+            }
+
+            $phones[] = $phone;
+
+        }
+
+        if (empty($phones)) {
+            return null;
+        }
+
+        return $phones;
+    }
+
+    public static function isocode($country)
+    {
+        $ic = self::info_countries(['name' => strtolower($country)]);
+        return $ic !== null ? $ic['isocode'] : '';
     }
 
     public static function info_countries($params)
@@ -1279,93 +1372,6 @@ class HelperProvider extends ServiceProvider
         return $country_info;
     }
 
-    public static function phone_cleaner($params)
-    {
-        if (isset($params['phones']) || isset($params['country_isocode']) || isset($params['country_name'])) {
-
-            foreach ($params['phones'] as $phone) {
-
-                $trans = [
-                    "-" => "",
-                    " " => "",
-                    "/" => "",
-                    "(" => "",
-                    ")" => "",
-                    "." => "",
-                ];
-                $phone = strtr($phone, $trans);
-
-                if (isset($params['country_isocode']) || isset($params['country_name'])) {
-
-                    if (isset($params['country_isocode'])) {
-                        $phone_prefix = Convertor::info_countries(['isocode' => $params['country_isocode']]);
-                    } else {
-                        $phone_prefix = Convertor::info_countries(['name' => strtolower($params['country_name'])]);
-                    }
-
-                    if ($phone_prefix != 'COUNTRY_NOT_IN_LIST' && $phone_prefix != null) {
-                        $phone_prefix = $phone_prefix['prefix'];
-
-                        $count_prefix = strlen($phone_prefix);
-
-                        // check if phone not have prefix
-                        if (substr($phone, 0, $count_prefix) != $phone_prefix) {
-
-                            // remove one zero from begine if exists
-                            if (substr($phone, 0, 1) == "0") {
-                                $phone = substr_replace($phone, '', 0, 1);
-                            }
-
-                            // remove double zero from begine if exists
-                            if (substr($phone, 0, 2) == "00") {
-                                $phone = substr_replace($phone, '', 0, 2);
-                            }
-
-                            // remove + form phone if exists
-                            if ((strpos($phone, '+') !== false)) {
-                                $phone = $phone = str_replace("+", "", $phone);
-                            }
-
-                            // add + to phone if prefix without + exists
-                            $new_phone_prefix = str_replace('+', '', $phone_prefix);
-
-                            if (substr($phone, 0, ($count_prefix - 1)) == $new_phone_prefix) {
-
-                                $phone = '+' . $phone;
-
-                            } else {
-                                // add prefix
-                                $phone = $phone_prefix . "" . $phone;
-                            }
-
-                            // remove nonumeric char except +
-                            $phone = preg_replace("/[^0-9+]/", "", $phone);
-                        }
-
-                        $phone = str_replace($phone_prefix, '(' . $phone_prefix . ')', $phone);
-
-                        unset($phone_prefix);
-                    }
-
-                }
-
-                $phones[] = $phone;
-
-            }
-
-            if (!empty($phones)) {
-                return $phones;
-            }
-
-        }
-    }
-
-    public static function isocode($country)
-    {
-        $ic = self::info_countries(['name' => strtolower($country)]);
-        return $ic !== null ? $ic['isocode'] : '';
-    }
-
     public static function identifier($params)
     {
         if (isset($params['name']) or isset($params['address'])) {
@@ -1438,7 +1444,7 @@ class HelperProvider extends ServiceProvider
             } else {
                 $rating = $params['array'];
             }
-            $rating = Convertor::fixPairedValues([
+            $rating = Helper::fixPairedValues([
                 'array' => $rating,
                 'slug' => false,
             ]);
@@ -1582,65 +1588,84 @@ class HelperProvider extends ServiceProvider
 //aeiou
     }
 
-    public static function mbstring_binary_safe_encoding($reset = false)
+    public static function words_cleaner($string,
+                                         $arrays,
+                                         $delimiter = ' ',
+                                         $decode_html = true,
+                                         $normalize = false,
+                                         $remove_numeric_words = true,
+                                         $remove_numeric_units = true,
+                                         $avoid_empty_result = true,
+                                         $force_fix = true,
+                                         $sensitive = false
+    )
     {
-        static $encodings = array();
-        static $overloaded = null;
-
-        if (is_null($overloaded)) {
-            $overloaded = function_exists('mb_internal_encoding') && (ini_get('mbstring.func_overload') & 2);
+        if (empty($string)) {
+            return null;
         }
 
-        if (false === $overloaded) {
-            return;
+        if ($normalize) {
+            $string = self::normalize_string($string);
+        }
+        if ($decode_html) {
+            $string = html_entity_decode($string);
+        }
+        if ($force_fix) {
+            $string = Encoding::toUTF8($string);
         }
 
-        if (!$reset) {
-            $encoding = mb_internal_encoding();
-            array_push($encodings, $encoding);
-            mb_internal_encoding('ISO-8859-1');
+        foreach ($arrays as $arr) {
+            $string = $sensitive ? str_replace($arr, '', $string) : str_ireplace($arr, '', $string);
         }
 
-        if ($reset && $encodings) {
-            $encoding = array_pop($encodings);
-            mb_internal_encoding($encoding);
-        }
-    }
+        $string = trim(preg_replace('/\s+/', ' ', $string));
 
-    public static function reset_mbstring_encoding()
-    {
-        self::mbstring_binary_safe_encoding(true);
-    }
+        $words = explode($delimiter, $string);
+        $i = 0;
 
-    public static function seems_utf8($str)
-    {
-        self::mbstring_binary_safe_encoding();
-        $length = strlen($str);
-        self::reset_mbstring_encoding();
-        for ($i = 0; $i < $length; $i++) {
-            $c = ord($str[$i]);
-            if ($c < 0x80) {
-                $n = 0; // 0bbbbbbb
-            } elseif (($c & 0xE0) == 0xC0) {
-                $n = 1; // 110bbbbb
-            } elseif (($c & 0xF0) == 0xE0) {
-                $n = 2; // 1110bbbb
-            } elseif (($c & 0xF8) == 0xF0) {
-                $n = 3; // 11110bbb
-            } elseif (($c & 0xFC) == 0xF8) {
-                $n = 4; // 111110bb
-            } elseif (($c & 0xFE) == 0xFC) {
-                $n = 5; // 1111110b
-            } else {
-                return false; // Does not match any model.
-            }
-            for ($j = 0; $j < $n; $j++) { // n bytes matching 10bbbbbb follow ?
-                if ((++$i == $length) || ((ord($str[$i]) & 0xC0) != 0x80)) {
-                    return false;
+        while ($i < sizeof($words)) {
+            if (!empty($words[$i])) {
+                if ($remove_numeric_words && (is_numeric($words[$i]) || preg_match('/[0-9]/', $words[$i])) > 0) {
+                    $chars_to_remove = 1;
+                    if ($remove_numeric_units && $i + 1 < sizeof($words) && in_array(strtolower($words[$i + 1]), self::$MEASURE_UNITS)) {
+                        $chars_to_remove = 2;
+                    }
+                    array_splice($words, $i, $chars_to_remove);
+                    continue;
                 }
             }
+
+            try {
+                if (in_array($words[$i][0], Helper::$UNWANTED_CHARS) || in_array($words[$i][0], Helper::$UNWANTED_PUNCTUATION)) {
+                    $words[$i] = substr($words[$i], 0, strlen($words[$i]) - 1);
+
+                    if(empty($words[$i])) {
+                        unset($words[$i]);
+                    }
+                }
+
+                $words[$i] = trim($words[$i]);
+            } catch (\Exception $e) {
+
+            }
+
+            $i++;
         }
-        return true;
+        $res = implode($delimiter, $words);
+
+        try {
+            if (in_array($res[-1], Helper::$UNWANTED_CHARS) || in_array($res[-1], Helper::$UNWANTED_PUNCTUATION)) {
+                $res = substr($res, 0, strlen($res) - 1);
+            }
+        } catch (\Exception $e) {
+
+        }
+
+        if ($avoid_empty_result) {
+            return isset($res) && !empty($res) ? $res : null;
+        } else {
+            return $res;
+        }
     }
 
     public static function normalize_string($string)
@@ -2051,78 +2076,65 @@ class HelperProvider extends ServiceProvider
         return $string;
     }
 
-    public static function words_cleaner($string,
-                                         $arrays,
-                                         $delimiter = ' ',
-                                         $decode_html = true,
-                                         $normalize = false,
-                                         $remove_numeric_words = true,
-                                         $remove_numeric_units = true,
-                                         $avoid_empty_result = true,
-                                         $force_fix = true
-    )
-    {// todo add info
-        // todo maybe add an option to remove between chars
-        if (!isset($string) || empty($string)) {
-            return null;
-        }
-
-
-        //todo maybe do it with foreach for lower str
-//        ini_set('mbstring.substitute_character', "none");
-//        $text= mb_convert_encoding($string, 'UTF-8', 'UTF-8');
-
-        if ($normalize) {
-            $string = self::normalize_string($string);
-        }
-        if ($decode_html) {
-            $string = html_entity_decode($string);
-        }
-        if ($force_fix) {
-//            ini_set('mbstring.substitute_character', 'none');
-//            $string = mb_convert_encoding($string, 'UTF-8', 'UTF-8');
-            $string = Encoding::toUTF8($string);
-//            $string = Encoding::fixUTF8($string);
-        }
-
-
-        foreach ($arrays as $arr) {
-            $string = str_replace($arr, '', $string);
-        }
-        $string = trim(preg_replace('/\s+/', ' ', $string));
-
-        $words = explode($delimiter, $string);
-        $i = 0;
-//        dd('aici', $words);
-        while ($i < sizeof($words)) {
-            if (!empty($words[$i])) {
-                if ($remove_numeric_words && (is_numeric($words[$i]) || preg_match('/[0-9]/', $words[$i])) > 0) {
-//                    dd($words[$i], is_numeric($words[$i]), preg_match('/[0-9]/', $words[$i]));
-                    $chars_to_remove = 1;
-                    if ($remove_numeric_units && $i + 1 < sizeof($words) && in_array(strtolower($words[$i + 1]), self::$MEASURE_UNITS)) {
-                        $chars_to_remove = 2;
-                    }
-                    array_splice($words, $i, $chars_to_remove);
-                    continue;
+    public static function seems_utf8($str)
+    {
+        self::mbstring_binary_safe_encoding();
+        $length = strlen($str);
+        self::reset_mbstring_encoding();
+        for ($i = 0; $i < $length; $i++) {
+            $c = ord($str[$i]);
+            if ($c < 0x80) {
+                $n = 0; // 0bbbbbbb
+            } elseif (($c & 0xE0) == 0xC0) {
+                $n = 1; // 110bbbbb
+            } elseif (($c & 0xF0) == 0xE0) {
+                $n = 2; // 1110bbbb
+            } elseif (($c & 0xF8) == 0xF0) {
+                $n = 3; // 11110bbb
+            } elseif (($c & 0xFC) == 0xF8) {
+                $n = 4; // 111110bb
+            } elseif (($c & 0xFE) == 0xFC) {
+                $n = 5; // 1111110b
+            } else {
+                return false; // Does not match any model.
+            }
+            for ($j = 0; $j < $n; $j++) { // n bytes matching 10bbbbbb follow ?
+                if ((++$i == $length) || ((ord($str[$i]) & 0xC0) != 0x80)) {
+                    return false;
                 }
             }
-            $words[$i] = trim($words[$i]);
-            $i++;
         }
-        $res = implode($delimiter, $words);
-        try {
-            if (in_array($res[-1], Convertor::$UNWANTED_CHARS) || in_array($res[-1], Convertor::$UNWANTED_PUNCTUATION)) {
-                $res = substr($res, 0, strlen($res) - 1);
-            }
-        } catch (\Exception $e) {
+        return true;
+    }
 
+    public static function mbstring_binary_safe_encoding($reset = false)
+    {
+        static $encodings = array();
+        static $overloaded = null;
+
+        if (is_null($overloaded)) {
+            $overloaded = function_exists('mb_internal_encoding') && (ini_get('mbstring.func_overload') & 2);
         }
 
-        if ($avoid_empty_result) {
-            return isset($res) && !empty($res) ? $res : null;
-        } else {
-            return $res;
+        if (false === $overloaded) {
+            return;
         }
+
+        if (!$reset) {
+            $encoding = mb_internal_encoding();
+            array_push($encodings, $encoding);
+            mb_internal_encoding('ISO-8859-1');
+        }
+
+        if ($reset && $encodings) {
+            $encoding = array_pop($encodings);
+            mb_internal_encoding($encoding);
+        }
+    }
+
+    public static function reset_mbstring_encoding()
+    {
+        self::mbstring_binary_safe_encoding(true);
     }
 
     public static function does_string_contains_numbers($string)
@@ -2204,7 +2216,7 @@ class HelperProvider extends ServiceProvider
 
         $urls = substr($urls, 0, strlen($urls) - 1);
 //        dd($urls);
-        $ai_tags = Convertor::get_image_ai_tags($urls);
+        $ai_tags = Helper::get_image_ai_tags($urls);
         if ($ai_tags === null) {
             return $result;
         }
@@ -2220,5 +2232,19 @@ class HelperProvider extends ServiceProvider
         return $result;
     }
 
+    public static function removeFromEndOfString($string, $remove, $strict = true, $trim = true)
+    {
+        if ($trim) {
+            $string = trim($string);
+        }
+
+        if ($strict) {
+            $string = preg_replace("/\\" . $remove . "$/", "", $string);
+        } else {
+            $string = rtrim($string, $remove);
+        }
+
+        return trim($string);
+    }
 
 }

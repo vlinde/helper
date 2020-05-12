@@ -1,8 +1,8 @@
 <?php
 
-namespace vlinde\helper;
+namespace Vlinde\Helper;
 
-class helper
+class Helper
 {
     // Build wonderful things
 }
