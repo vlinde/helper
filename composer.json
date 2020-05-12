@@ -22,12 +22,12 @@
     },
     "autoload": {
         "psr-4": {
-            "vlinde\\helper\\": "src/"
+            "Vlinde\\Helper\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "vlinde\\helper\\Tests\\": "tests"
+            "Vlinde\\Helper\\Tests\\": "tests"
         }
     },
     "extra": {
