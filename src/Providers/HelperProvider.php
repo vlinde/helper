@@ -1597,7 +1597,8 @@ class Helper extends ServiceProvider
                                          $remove_numeric_units = true,
                                          $avoid_empty_result = true,
                                          $force_fix = true,
-                                         $sensitive = false
+                                         $sensitive = false,
+                                         $removeUnwanted = false
     )
     {
         if (empty($string)) {
@@ -1636,10 +1637,10 @@ class Helper extends ServiceProvider
             }
 
             try {
-                if (in_array($words[$i][0], Helper::$UNWANTED_CHARS) || in_array($words[$i][0], Helper::$UNWANTED_PUNCTUATION)) {
+                if ($removeUnwanted && (in_array($words[$i][0], Helper::$UNWANTED_CHARS) || in_array($words[$i][0], Helper::$UNWANTED_PUNCTUATION))) {
                     $words[$i] = substr($words[$i], 0, strlen($words[$i]) - 1);
 
-                    if(empty($words[$i])) {
+                    if (empty($words[$i])) {
                         unset($words[$i]);
                     }
                 }
@@ -1654,7 +1655,7 @@ class Helper extends ServiceProvider
         $res = implode($delimiter, $words);
 
         try {
-            if (in_array($res[-1], Helper::$UNWANTED_CHARS) || in_array($res[-1], Helper::$UNWANTED_PUNCTUATION)) {
+            if ($removeUnwanted && (in_array($res[-1], Helper::$UNWANTED_CHARS) || in_array($res[-1], Helper::$UNWANTED_PUNCTUATION))) {
                 $res = substr($res, 0, strlen($res) - 1);
             }
         } catch (\Exception $e) {
