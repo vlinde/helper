@@ -1098,19 +1098,19 @@ class Helper extends ServiceProvider
 
                     // if phone doesn't have a prefix
                     if (substr($phone, 0, $count_prefix) != $phone_prefix) {
-                        // remove one zero from begine if exists
-                        if (substr($phone, 0, 1) == "0") {
-                            $phone = substr_replace($phone, '', 0, 1);
+                        // remove + form phone if exists
+                        if ((strpos($phone, '+') !== false)) {
+                            $phone = $phone = str_replace("+", "", $phone);
                         }
 
-                        // remove double zero from begine if exists
+                        // remove double zero from beginning if exists
                         if (substr($phone, 0, 2) == "00") {
                             $phone = substr_replace($phone, '', 0, 2);
                         }
 
-                        // remove + form phone if exists
-                        if ((strpos($phone, '+') !== false)) {
-                            $phone = $phone = str_replace("+", "", $phone);
+                        // remove one zero from beginning if exists
+                        if (substr($phone, 0, 1) == "0") {
+                            $phone = substr_replace($phone, '', 0, 1);
                         }
 
                         // add + to phone if prefix without + exists
@@ -1131,6 +1131,12 @@ class Helper extends ServiceProvider
 
                     if($phone == $phone_prefix) {
                         continue;
+                    }
+
+                    if(substr_count($phone, $phone_prefix) > 1) {
+                        $pos = strpos($phone, $phone_prefix);
+
+                        $phone = substr_replace($phone, '', $pos, strlen($phone_prefix));
                     }
 
                     $phone = str_replace($phone_prefix, '(' . $phone_prefix . ')', $phone);
