@@ -104,48 +104,27 @@ class Helper extends ServiceProvider
         'c l'
     ];
 
-    public static function fixPairedValues($params)
+    public static function fixOneValueArray($params)
     {
-        if (count($params['array']) % 2 != 0) {
-            unset($params['array'][0]);
-        }
-
-        if (isset($params['unsetfirst'])) {
-            unset($params['array'][0]);
-        }
-
-        $array = array_values($params['array']);
+        $array = $params['array'];
         $clean = isset($params['clean']) ? true : false;
-        $slugify = isset($params['slug']) ? false : true;
         $clean_type = isset($params['clean_type']) ? $params['clean_type'] : 'value';
 
         $fixedArray = [];
-
         if (is_array($array) && !empty($array)) {
             foreach ($array as $key => $item) {
+
                 if (is_object($item)) {
                     $object_key = key((array)$item);
-                    if ($key % 2 == 0 && isset($array[$key + 1])) {
-                        if ($slugify == true) {
-                            $item->$object_key = str_slug($item->$object_key);
-                        }
-                        $fixedArray[$item->$object_key] = $clean == true
-                            ? self::cleanStr([
-                                'string' => $array[$key + 1]->$object_key,
-                                'type' => $clean_type,
-                            ]) : $array[$key + 1]->$object_key;
-                    }
+                    $fixedArray[] = $clean ? self::cleanStr([
+                        'string' => $array[$key]->$object_key,
+                        'type' => $clean_type,
+                    ]) : $array[$key]->$object_key;
                 } else {
-                    if ($slugify == true) {
-                        $item = str_slug($item);
-                    }
-                    if ($key % 2 == 0 && isset($array[$key + 1])) {
-                        $fixedArray[str_slug($item)] = $clean == true
-                            ? self::cleanStr([
-                                'string' => $array[$key + 1],
-                                'type' => $clean_type,
-                            ]) : $array[$key + 1];
-                    }
+                    $fixedArray[] = $clean ? self::cleanStr([
+                        'string' => $array[$key],
+                        'type' => $clean_type,
+                    ]) : $array[$key];
                 }
             }
         }
@@ -205,34 +184,6 @@ class Helper extends ServiceProvider
         }
 
         return $string;
-    }
-
-    public static function fixOneValueArray($params)
-    {
-        $array = $params['array'];
-        $clean = isset($params['clean']) ? true : false;
-        $clean_type = isset($params['clean_type']) ? $params['clean_type'] : 'value';
-
-        $fixedArray = [];
-        if (is_array($array) && !empty($array)) {
-            foreach ($array as $key => $item) {
-
-                if (is_object($item)) {
-                    $object_key = key((array)$item);
-                    $fixedArray[] = $clean ? self::cleanStr([
-                        'string' => $array[$key]->$object_key,
-                        'type' => $clean_type,
-                    ]) : $array[$key]->$object_key;
-                } else {
-                    $fixedArray[] = $clean ? self::cleanStr([
-                        'string' => $array[$key],
-                        'type' => $clean_type,
-                    ]) : $array[$key];
-                }
-            }
-        }
-
-        return $fixedArray;
     }
 
     public static function unsetValueFromArray($params)
@@ -1079,7 +1030,7 @@ class Helper extends ServiceProvider
 
             $phone = strtr($phone, $trans);
 
-            if(empty($phone)) {
+            if (empty($phone)) {
                 continue;
             }
 
@@ -1129,11 +1080,11 @@ class Helper extends ServiceProvider
                         $phone = preg_replace("/[^0-9+]/", "", $phone);
                     }
 
-                    if($phone == $phone_prefix) {
+                    if ($phone == $phone_prefix) {
                         continue;
                     }
 
-                    if(substr_count($phone, $phone_prefix) > 1) {
+                    if (substr_count($phone, $phone_prefix) > 1) {
                         $pos = strpos($phone, $phone_prefix);
 
                         $phone = substr_replace($phone, '', $pos, strlen($phone_prefix));
@@ -1155,12 +1106,6 @@ class Helper extends ServiceProvider
         }
 
         return $phones;
-    }
-
-    public static function isocode($country)
-    {
-        $ic = self::info_countries(['name' => strtolower($country)]);
-        return $ic !== null ? $ic['isocode'] : '';
     }
 
     public static function info_countries($params)
@@ -1378,6 +1323,12 @@ class Helper extends ServiceProvider
         return $country_info;
     }
 
+    public static function isocode($country)
+    {
+        $ic = self::info_countries(['name' => strtolower($country)]);
+        return $ic !== null ? $ic['isocode'] : '';
+    }
+
     public static function identifier($params)
     {
         if (isset($params['name']) or isset($params['address'])) {
@@ -1471,6 +1422,55 @@ class Helper extends ServiceProvider
                 return $rating_c;
             }
         }
+    }
+
+    public static function fixPairedValues($params)
+    {
+        if (count($params['array']) % 2 != 0) {
+            unset($params['array'][0]);
+        }
+
+        if (isset($params['unsetfirst'])) {
+            unset($params['array'][0]);
+        }
+
+        $array = array_values($params['array']);
+        $clean = isset($params['clean']) ? true : false;
+        $slugify = isset($params['slug']) ? false : true;
+        $clean_type = isset($params['clean_type']) ? $params['clean_type'] : 'value';
+
+        $fixedArray = [];
+
+        if (is_array($array) && !empty($array)) {
+            foreach ($array as $key => $item) {
+                if (is_object($item)) {
+                    $object_key = key((array)$item);
+                    if ($key % 2 == 0 && isset($array[$key + 1])) {
+                        if ($slugify == true) {
+                            $item->$object_key = str_slug($item->$object_key);
+                        }
+                        $fixedArray[$item->$object_key] = $clean == true
+                            ? self::cleanStr([
+                                'string' => $array[$key + 1]->$object_key,
+                                'type' => $clean_type,
+                            ]) : $array[$key + 1]->$object_key;
+                    }
+                } else {
+                    if ($slugify == true) {
+                        $item = str_slug($item);
+                    }
+                    if ($key % 2 == 0 && isset($array[$key + 1])) {
+                        $fixedArray[str_slug($item)] = $clean == true
+                            ? self::cleanStr([
+                                'string' => $array[$key + 1],
+                                'type' => $clean_type,
+                            ]) : $array[$key + 1];
+                    }
+                }
+            }
+        }
+
+        return $fixedArray;
     }
 
     public static function transformSubArrayInArray($items)
@@ -2174,38 +2174,6 @@ class Helper extends ServiceProvider
 
     }
 
-    public static function get_image_ai_tags($urls)
-    {
-        try {
-            $client = new Client();
-            $q = 'http://server7.vlindedns.com:5000/tags?imgs=' . $urls . '&token=1Hribxp6A16hFPnWyeeO';
-//            $q = 'http://127.0.0.1:5000/tags?imgs=' . $urls . '&token=1Hribxp6A16hFPnWyeeO&clean=false';
-            $client->request('GET', $q);
-            $resp = $client->getResponse();
-            if ($resp->getStatusCode() !== 200) {
-                return null;
-            }
-            $tags = [];
-            $res = json_decode($resp->getContent());
-            foreach ($res as $obj) {
-                $aux = [];
-                if (isset($obj->results)) {
-                    foreach ($obj->results as $tag => $prob) {
-                        if ($prob > 0) {
-                            array_push($aux, $tag);
-                        }
-                    }
-                }
-                array_push($tags, $aux);
-            }
-            return $tags;
-        } catch (\Exception $e) {
-            return null;
-//            dd($e->getMessage());
-        }
-
-    }
-
     public static function set_images_ai_tags($result)
     {
         // call api
@@ -2239,6 +2207,38 @@ class Helper extends ServiceProvider
         return $result;
     }
 
+    public static function get_image_ai_tags($urls)
+    {
+        try {
+            $client = new Client();
+            $q = 'http://server7.vlindedns.com:5000/tags?imgs=' . $urls . '&token=1Hribxp6A16hFPnWyeeO';
+//            $q = 'http://127.0.0.1:5000/tags?imgs=' . $urls . '&token=1Hribxp6A16hFPnWyeeO&clean=false';
+            $client->request('GET', $q);
+            $resp = $client->getResponse();
+            if ($resp->getStatusCode() !== 200) {
+                return null;
+            }
+            $tags = [];
+            $res = json_decode($resp->getContent());
+            foreach ($res as $obj) {
+                $aux = [];
+                if (isset($obj->results)) {
+                    foreach ($obj->results as $tag => $prob) {
+                        if ($prob > 0) {
+                            array_push($aux, $tag);
+                        }
+                    }
+                }
+                array_push($tags, $aux);
+            }
+            return $tags;
+        } catch (\Exception $e) {
+            return null;
+//            dd($e->getMessage());
+        }
+
+    }
+
     public static function removeFromEndOfString($string, $remove, $strict = true, $trim = true)
     {
         if ($trim) {
@@ -2254,4 +2254,24 @@ class Helper extends ServiceProvider
         return trim($string);
     }
 
+    public static function extract_domain_name($url)
+    {
+        $hostname = parse_url($url, PHP_URL_HOST);
+
+        if ($hostname === null) {
+            return false;
+        }
+
+        $urlExploded = explode('.', $hostname);
+
+        if (count($urlExploded) > 2) {
+            return $urlExploded[1];
+        }
+
+        if (isset($urlExploded[0])) {
+            return $urlExploded[0];
+        }
+        
+        return false;
+    }
 }
