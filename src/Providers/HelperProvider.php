@@ -2256,22 +2256,18 @@ class Helper extends ServiceProvider
 
     public static function extract_domain_name($url)
     {
-        $hostname = parse_url($url, PHP_URL_HOST);
+        $pieces = parse_url($url);
 
-        if ($hostname === null) {
-            return false;
+        if (!isset($pieces['host'])) {
+            return null;
         }
 
-        $urlExploded = explode('.', $hostname);
-
-        if (count($urlExploded) > 2) {
-            return $urlExploded[1];
+        if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z\.]{2,6})$/i', $pieces['host'], $regs) === false) {
+            return null;
         }
 
-        if (isset($urlExploded[0])) {
-            return $urlExploded[0];
-        }
-        
-        return false;
+        $domain = explode('.', $regs['domain']);
+
+        return !empty($domain[0]) ? $domain[0] : null;
     }
 }
