@@ -33,22 +33,9 @@ class HelperServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/helper.php', 'helper');
 
-        // Register the service the package provides.
-        $this->app->singleton('helper', function ($app) {
-            return new Helper;
-        });
+        $this->app->alias(Helper::class, 'helper');
     }
 
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
-    {
-        return ['helper'];
-    }
-    
     /**
      * Console-specific booting.
      *
