@@ -2268,4 +2268,38 @@ class Helper
 
         return !empty($domain[0]) ? $domain[0] : null;
     }
+
+    public static function generateSlug($data = [])
+    {
+        $element = $data['element'];
+        $class = $data['class'];
+        isset($data['field']) ? $field = $data['field'] : $field = 'slug';
+        isset($data['id']) ? $id = $data['id'] : $id = false;
+        $slug = str_slug($element);
+        $q = $class::whereRaw("{$field} RLIKE '{$slug}(-[0-9]*)?$'");
+        if ($id) {
+            $q->where('id', '!=', $id);
+        }
+        $checkSlug = $q->pluck($field);
+        $max = $number = 0;
+        $exists = false;
+        if ($checkSlug) {
+            foreach ($checkSlug as $key => $cS) {
+                $pieces = explode('-', $cS);
+                $end = end($pieces);
+                if (is_numeric($end)) {
+                    $number = $end;
+                }
+                if ($max < $number) {
+                    $max = $number;
+                }
+                $exists = true;
+            }
+        }
+        if ($exists) {
+            return $slug . '-' . ($max + 1);
+        }
+
+        return $slug;
+    }
 }
