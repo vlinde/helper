@@ -8,17 +8,22 @@ use stdClass;
 class Helper
 {
     public static $DOW_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    // copied from identifier function
     public static $UNWANTED_KEYWORDS = [
+        'restaur',
+        'bar',
+        'restauracja',
+        'restaur',
+        'bary',
+        'baru',
         'restaurant',
         'Restaurant',
+        'RESTAURANTE',
         'RESTAURANT',
         'ristorante',
         'Ristorante',
         'RISTORANTE',
         'restaurante',
         'Restaurante',
-        'RESTAURANTE',
         'Ресторант',
         'ресторант',
         'РЕСТОРАНТ',
@@ -28,7 +33,15 @@ class Helper
         'motel',
         'Motel',
         'MOTEL',
+        'menu',
+        'Menu',
+        'MENU',
+        'LTD',
+        'ltd',
+        'LIMITED',
+        'limited'
     ];
+    // copied from identifier function
     public static $UNWANTED_CHARS = [
         "[",
         "^",
@@ -59,10 +72,12 @@ class Helper
         "�",
         '�',
         '/',
+        '™',
         '\\',
         "\n",
         "\r",
         "\t",
+        "\""
     ];
 
     public static $UNWANTED_PUNCTUATION = [
@@ -76,6 +91,7 @@ class Helper
 
     // use this for now
     public static $CURRENCY_CODES = [
+
         "£" => 'GBP',
         "$" => 'USD',
         "lei" => 'RON',
@@ -92,6 +108,7 @@ class Helper
 
     public static $MEASURE_UNITS = [
         "l",
+        "kj",
         "ml",
         "g",
         "mg",
@@ -102,6 +119,245 @@ class Helper
         'c l.',
         'c l'
     ];
+
+    const DIETARY_LIKELY_WORDS = [
+        'vegetarian', 'spicy', 'fast', 'fast-food', 'gluten', 'gluten-free', 'grill', 'vegan', 'sardinian',
+    ];
+    const CATEGORY_LIKELY_WORDS = [
+        'mediterranean', 'italian', 'pizzerias',
+        'bialann', 'restaurant', 'pub', 'brew', 'american', 'turkish', 'restauracja', 'restaur', 'bary', 'baru',
+        'contemporany', 'german', 'french', 'bar', 'spanish', 'catalan', 'mexican', 'casual', 'asian', 'indian',
+        'dairy', 'shop', 'farm', 'seafood', 'pasta', 'steak', 'pizza', 'salads', 'japanese'
+    ];
+    const MEAL_LIKELY_WORDS = [
+        'cafe', 'fish', 'burgers', 'pie', 'sushi', 'tacos', 'wine', 'beer', 'cocktails', 'noodles'
+    ];
+
+    const COUNTRIES_INFO = array(
+        [
+            'domain' => 'de',
+            'isocode' => 'DE',
+            'currency' => 'EUR',
+            'name' => 'Germany',
+            'zip' => '5',
+            'prefix' => '+49',
+            'lang' => 'de'
+        ],
+        [
+            'domain' => 'co.uk',
+            'isocode' => 'GB',
+            'currency' => 'GBP',
+            'name' => 'United Kingdom',
+            'prefix' => '+44',
+            'zip' => 'GB', // A[A]N[A/N] -- Done
+            'lang' => 'en'
+        ], array(
+            //sometimes its shown as uk
+            'domain' => 'co.uk',
+            'isocode' => 'UK',
+            'currency' => 'GBP',
+            'name' => 'United Kingdom',
+            'prefix' => '+44',
+            'zip' => 'GB',
+            'lang' => 'en'
+        ),
+        array(
+            'domain' => 'ro',
+            'isocode' => 'RO',
+            'currency' => 'RON',
+            'name' => 'Romania',
+            'prefix' => '+40',
+            'zip' => '6',
+            'lang' => 'ro'
+        ),
+        array(
+            'domain' => 'com.au',
+            'isocode' => 'AU',
+            'currency' => 'AUD',
+            'name' => 'Australia',
+            'prefix' => '+61',
+            'zip' => '4',
+            'lang' => 'en'
+        ),
+        array(
+            'domain' => 'at',
+            'isocode' => 'AT',
+            'currency' => 'EUR',
+            'name' => 'Austria',
+            'prefix' => '+43',
+            'zip' => '4',
+            'lang' => 'de'
+        ),
+        array(
+            'domain' => 'fr',
+            'isocode' => 'FR',
+            'currency' => 'EUR',
+            'name' => 'France',
+            'prefix' => '+33',
+            'zip' => '5',
+            'lang' => 'fr'
+        ),
+        array(
+            'domain' => 'es',
+            'isocode' => 'ES',
+            'currency' => 'EUR',
+            'name' => 'Spain',
+            'prefix' => '+34',
+            'zip' => '5',
+            'lang' => 'es'
+        ),
+        array(
+            'domain' => 'hk',
+            'isocode' => 'HK',
+            'currency' => 'HKD',
+            'name' => 'Hong Kong',
+            'prefix' => '+852',
+            'zip' => 'HK',
+        ),
+        array(
+            'domain' => 'com',
+            'isocode' => 'US',
+            'currency' => 'USD',
+            'name' => 'United States',
+            'prefix' => '+1',
+            'zip' => 'US', // NNNNN, NNNNN-NNN -- Done
+            'lang' => 'en'
+        ),
+        array(
+            'domain' => 'ca',
+            'isocode' => 'CA',
+            'currency' => 'CAD',
+            'name' => 'Canada',
+            'prefix' => '+1',
+            'zip' => 'CA', // ANA NAN
+            'lang' => 'en'
+        ),
+        array(
+            'domain' => 'co',
+            'isocode' => 'CO',
+            'currency' => 'COP',
+            'name' => 'Colombia',
+            'prefix' => '+57',
+            'zip' => '6',
+            'lang' => 'es'
+        ),
+        array(
+            'domain' => 'in',
+            'isocode' => 'IN',
+            'currency' => 'INR',
+            'name' => 'India',
+            'prefix' => '+91',
+            'zip' => 'IN', //  NNNNNN, NNN NNN
+            'lang' => 'hi'
+        ),
+        array(
+            'domain' => 'ph',
+            'isocode' => 'PH',
+            'currency' => 'PHP',
+            'name' => 'Philippines',
+            'prefix' => '+1',
+            'zip' => '4',
+        ),
+        array(
+            'domain' => 'ng',
+            'isocode' => 'NG',
+            'currency' => 'NGN',
+            'name' => 'Nigeria',
+            'prefix' => '+63',
+            'zip' => '6',
+        ),
+        array(
+            'domain' => 'ch',
+            'isocode' => 'CH',
+            'currency' => 'CHF',
+            'name' => 'Switzerland',
+            'prefix' => '+41',
+            'zip' => '4',
+            'lang' => 'de'
+        ),
+        array(
+            'domain' => 'com.ar',
+            'isocode' => 'AR',
+            'currency' => 'ARS',
+            'name' => 'Argentina',
+            'prefix' => '+54',
+            'zip' => '4',
+            'lang' => 'es'
+        ),
+        array(
+            'domain' => 'com.mx',
+            'isocode' => 'MX',
+            'currency' => 'MXN',
+            'name' => 'Mexico',
+            'prefix' => '+52',
+            'zip' => '5',
+            'lang' => 'es'
+        ),
+        array(
+            'domain' => 'com.pe',
+            'isocode' => 'PE',
+            'currency' => 'PEN',
+            'name' => 'Peru',
+            'prefix' => '+51',
+            'zip' => 'PE', // NNNNN CC, NNNN,
+            'lang' => 'es'
+        ),
+        array(
+            'domain' => 'com.br',
+            'isocode' => 'BR',
+            'currency' => 'BRL',
+            'name' => 'Brazil',
+            'prefix' => '+55',
+            'zip' => 'BR', // NNNNN, NNNNN-NNN
+            'lang' => 'pt'
+        ),
+        array(
+            'domain' => 'pt',
+            'isocode' => 'PT',
+            'currency' => 'EUR',
+            'name' => 'Portugal',
+            'prefix' => '+351',
+            'zip' => 'PT', // NNNN-NNN
+            'lang' => 'pt'
+        ),
+        [
+            'domain' => 'cn',
+            'isocode' => 'CN',
+            'currency' => 'CNY',
+            'name' => 'China',
+            'prefix' => '+86',
+            'zip' => '6',
+            'lang' => 'zh'
+        ],
+        [
+            'domain' => 'it',
+            'isocode' => 'IT',
+            'currency' => 'EUR',
+            'name' => 'Italy',
+            'prefix' => '+39',
+            'zip' => 'RM',
+            'lang' => 'it'
+        ],
+        [
+            'domain' => 'pl',
+            'isocode' => 'PL',
+            'currency' => 'EUR',
+            'name' => 'Poland',
+            'prefix' => '+48',
+            'zip' => '812',
+            'lang' => 'pl'
+        ],
+        [
+            'domain' => 'com',
+            'isocode' => 'US',
+            'currency' => 'DOL',
+            'name' => 'USA',
+            'prefix' => '+48',
+            'zip' => '812',
+            'lang' => 'en'
+        ]
+    );
+    const LANGUAGE_ISOCODES = ['en', 'es', 'de', 'fr'];
 
     public static function fixOneValueArray($params)
     {
@@ -2309,4 +2565,219 @@ class Helper
 
         return str_replace($entities, $replacements, urlencode($string));
     }
+
+    public static function remove_emoji($text)
+        // converts
+        // still fails for some cases
+    {
+        $text = preg_replace('/([0-9|#][\x{20E3}])|[\x{00ae}\x{00a9}\x{203C}\x{2047}\x{2048}\x{2049}\x{3030}\x{303D}\x{2139}\x{2122}\x{3297}\x{3299}][\x{FE00}-\x{FEFF}]?|[\x{2190}-\x{21FF}][\x{FE00}-\x{FEFF}]?|[\x{2300}-\x{23FF}][\x{FE00}-\x{FEFF}]?|[\x{2460}-\x{24FF}][\x{FE00}-\x{FEFF}]?|[\x{25A0}-\x{25FF}][\x{FE00}-\x{FEFF}]?|[\x{2600}-\x{27BF}][\x{FE00}-\x{FEFF}]?|[\x{2900}-\x{297F}][\x{FE00}-\x{FEFF}]?|[\x{2B00}-\x{2BF0}][\x{FE00}-\x{FEFF}]?|[\x{1F000}-\x{1F6FF}][\x{FE00}-\x{FEFF}]?/u', '', $text);
+        $text = preg_replace('/&#\d*;/', '', $text);
+        return $text;
+    }
+    // new
+
+    public static function remove_html_special($text)
+        // i think it's for converts
+    {
+        return preg_replace('/&\w*;/', '', $text);
+    }
+
+    public static function filterAmenity(&$amenity, $kws_arr, $extra_arr = [])
+        // for converts
+    {
+        try {
+            if (!isset($amenity) || empty($amenity)) {
+                return;
+            }
+            $broke = false;
+            foreach (explode(' ', $amenity) as $word) {
+                foreach ($kws_arr as $unstr) {
+                    if (strpos(strtolower($word), strtolower($unstr)) !== FALSE || array_has($extra_arr, $amenity)) {
+                        $amenity = '';
+                        $broke = true;
+                        break;
+                    }
+                }
+                if ($broke) {
+                    $broke = false;
+                    break;
+                } else {
+                    return;
+                }
+            }
+        } catch (\Exception $e) {
+            return;
+        }
+
+
+    }
+    public static function fill_amenities_array($string, &$dietary_arr, &$features_arr, &$meals_arr, &$categories_arr, $string_sep = ' ')
+    {
+        //todo fill arrays
+        $og = $string;
+        $string = str_replace('/', $string_sep, $string);
+        $string = str_replace('-', $string_sep, $string);
+        $strings = explode($string_sep, trim(strtolower($string)));
+        $target = null;
+        foreach ($strings as $s) {
+            if (in_array(strtolower($s), self::DIETARY_LIKELY_WORDS)) {
+                $target =& $dietary_arr;
+                break;
+            } elseif (in_array(strtolower($s), self::MEAL_LIKELY_WORDS)) {
+                $target =& $meals_arr;
+                break;
+            } elseif (in_array(strtolower($s), self::CATEGORY_LIKELY_WORDS)) {
+                $target =& $categories_arr;
+                break;
+            }
+        }
+        if ($target === null) {
+            $target =& $features_arr;
+        }
+        array_push($target, ucwords($og));
+    }
+
+    public static function chineseToUnicode($str)
+    // WIP
+    {
+        //split word
+        preg_match_all('/./u', $str, $matches);
+
+        $c = "";
+        foreach ($matches[0] as $m) {
+            $c .= "&#" . base_convert(bin2hex(iconv('UTF-8', "UCS-4", $m)), 16, 10);
+        }
+        return $c;
+    }
+
+    public static function string_cleaner($string, $non_ascii = false)
+    {
+        if (!isset($string) || empty($string)) {
+            return $string;
+        }
+        if ($non_ascii) {
+            $string = preg_replace('/[^(\x20-\x7F)]*/', '', $string);
+        }
+        return $string;
+    }
+
+    public static function fill_openhours_array($days_string, $intervals_string, &$open_hours_arr, $days_sep = '-', $intervals_sep = '-', $has_m = true, $isocode = null)
+    {
+        // changes the given array
+        // days_string      => 'Mon-Tues or Mon
+        // intervals_string => '14:00-17:59' or 01:00pm-4:00am
+        $arr = null;
+        if (!isset($open_hours_arr)) {
+            $arr = [];
+        }
+        $days = [];
+        if (strpos($days_string, $days_sep)) {
+            $d = explode($days_sep, trim($days_string));
+            $starti = array_search(self::find_day($d[0]), self::$DOW_KEYS);
+            $endi = array_search(self::find_day($d[1]), self::$DOW_KEYS);
+            while (true) {
+                array_push($days, self::$DOW_KEYS[$starti]);
+                if ($starti === $endi) {
+                    break;
+                }
+                $starti++;
+                if ($starti > sizeof(self::$DOW_KEYS) - 1) {
+                    $starti = 0;
+                }
+            }
+        } else {
+            $days = [self::find_day($days_string, $isocode)];
+        }
+        $intervals = [];
+        $interv = explode($intervals_sep, trim($intervals_string));
+        foreach ($interv as $interval) {
+            if (strpos($interval, 'pm')) {
+                $mer = substr($interval, strpos($interval, 'pm'));
+            } elseif (strpos($interval, 'am')) {
+                $mer = substr($interval, strpos($interval, 'am'));
+            } else {
+                $mer = null;
+            }
+            if ($mer === null) {
+                $hour = explode(':', $interval);
+
+            } else {
+                $hour = explode(':', substr($interval, 0, strlen($interval) - (strlen($interval) - strpos($interval, $mer))));
+            }
+
+            $h = intval($hour[0]);
+            $m = intval($hour[1]);
+            if ($mer === 'pm' && $h !== 12 && $h !== 0) {
+                $h = $h + 12;
+            }
+            if ($mer === 'am' && $h === 12) {
+                $h = 0;
+            }
+            $h = strval($h);
+            if (strlen($h) === 1) {
+                $h = '0' . $h;
+            }
+            $m = strval($m);
+            if (strlen($m) === 1) {
+                $m = $m . '0';
+            }
+            $hour = $h . ':' . $m;
+            array_push($intervals, $hour);
+
+        }
+        foreach ($days as $day) {
+            if (!isset($day) || empty($day)) {
+                continue;
+            }
+            if (isset($open_hours_arr[$day])) {
+                array_push($open_hours_arr[$day], $intervals);
+            } else {
+                $open_hours_arr[$day] = [$intervals];
+            }
+        }
+        //??
+//        return $open_hours_arr;
+
+    }
+
+    public static function validate_date($date, $format = 'Y-m-d H:i:s')
+    {
+        // https://stackoverflow.com/questions/19271381/correctly-determine-if-date-string-is-a-valid-date-in-that-format
+//        $a = strval($date);
+        $d = DateTime::createFromFormat($format, $date);
+//        $a=$d->format($format) === $date;
+        return $d && $d->format($format) === $date;
+    }
+
+    public static function is_datetime_valid()
+    {
+
+    }
+
+    public static function is_date_valid()
+    {
+
+    }
+
+    public static function is_array_asoc($arr)
+    {
+        if (array() === $arr) return false;
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
+
+    public static function find_day($string_day, $isocode = null)
+    {
+        $dow = self::$DOW_KEYS;
+        if (isset($isocode)) {
+            //
+        }
+        $string_day = strtolower($string_day);
+        foreach ($dow as $day) {
+            if (strpos($day, strtolower($string_day)) !== false) {
+                return $day;
+            }
+        }
+        return null;
+    }
+
 }
