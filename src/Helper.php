@@ -2,7 +2,9 @@
 
 namespace Vlinde\Helper;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use stdClass;
 
 class Helper
@@ -653,7 +655,7 @@ class Helper
             $provider = self::getProvider($project, $project . 'Provider');
 
             $projects[] = [
-                'key' => str_slug($project),
+                'key' => Str::slug($project),
                 'name' => $project,
                 'status' => property_exists($provider, 'status') ? $provider::$status : 'unknown',
                 'version' => property_exists($provider, 'version') ? $provider::$version : 'unknown'
@@ -883,7 +885,7 @@ class Helper
         $name_number = self::getAfter('_', $name);
         $name_number_underscore = "_" . $name_number;
         $name_for_slug = str_replace($name_number_underscore, '', $name);
-        $name = str_slug($name_for_slug);
+        $name = Str::slug($name_for_slug);
         $name = $name . "" . $name_number_underscore;
 
         $location = storage_path() . '/app/public/project_images/' . $path . '/cache/' . $name . '.jpg';
@@ -1609,7 +1611,7 @@ class Helper
                 '-de-' => '',
             ];
 
-            $name = "-" . str_slug($params['name']) . "-";
+            $name = "-" . Str::slug($params['name']) . "-";
             $name = str_replace(array_keys($to_clean), array_values($to_clean), $name);
             $name = trim($name);
 
@@ -1633,7 +1635,7 @@ class Helper
                         '-straße-' => '',
                         '-street-' => '',
                     ];
-                    $zip = "-" . str_slug($zip) . "-";
+                    $zip = "-" . Str::slug($zip) . "-";
                     $zip = str_replace(array_keys($to_clean_address),
                         array_values($to_clean_address), $zip);
                 } else {
@@ -1642,7 +1644,7 @@ class Helper
 
             }
 
-            return str_slug($params['country'] . "-" . $zip . "-" . $name);
+            return Str::slug($params['country'] . "-" . $zip . "-" . $name);
         }
         return '';
     }
@@ -1702,7 +1704,7 @@ class Helper
                     $object_key = key((array)$item);
                     if ($key % 2 == 0 && isset($array[$key + 1])) {
                         if ($slugify == true) {
-                            $item->$object_key = str_slug($item->$object_key);
+                            $item->$object_key = Str::slug($item->$object_key);
                         }
                         $fixedArray[$item->$object_key] = $clean == true
                             ? self::cleanStr([
@@ -1712,10 +1714,10 @@ class Helper
                     }
                 } else {
                     if ($slugify == true) {
-                        $item = str_slug($item);
+                        $item = Str::slug($item);
                     }
                     if ($key % 2 == 0 && isset($array[$key + 1])) {
-                        $fixedArray[str_slug($item)] = $clean == true
+                        $fixedArray[Str::slug($item)] = $clean == true
                             ? self::cleanStr([
                                 'string' => $array[$key + 1],
                                 'type' => $clean_type,
@@ -2530,7 +2532,7 @@ class Helper
         $class = $data['class'];
         isset($data['field']) ? $field = $data['field'] : $field = 'slug';
         isset($data['id']) ? $id = $data['id'] : $id = false;
-        $slug = str_slug($element);
+        $slug = Str::slug($element);
         $q = $class::whereRaw("{$field} RLIKE '{$slug}(-[0-9]*)?$'");
         if ($id) {
             $q->where('id', '!=', $id);
@@ -2592,7 +2594,7 @@ class Helper
             $broke = false;
             foreach (explode(' ', $amenity) as $word) {
                 foreach ($kws_arr as $unstr) {
-                    if (strpos(strtolower($word), strtolower($unstr)) !== FALSE || array_has($extra_arr, $amenity)) {
+                    if (strpos(strtolower($word), strtolower($unstr)) !== FALSE || Arr::has($extra_arr, $amenity)) {
                         $amenity = '';
                         $broke = true;
                         break;
