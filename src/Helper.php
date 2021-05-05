@@ -2466,7 +2466,7 @@ class Helper
     {
         try {
             $client = new Client();
-            $q = 'http://server7.vlindedns.com:5000/tags?imgs=' . $urls . '&token=1Hribxp6A16hFPnWyeeO';
+            $q = 'http://s7.vlddns.com:5000/tags?imgs=' . $urls . '&token=1Hribxp6A16hFPnWyeeO';
 //            $q = 'http://127.0.0.1:5000/tags?imgs=' . $urls . '&token=1Hribxp6A16hFPnWyeeO&clean=false';
             $client->request('GET', $q);
             $resp = $client->getResponse();
