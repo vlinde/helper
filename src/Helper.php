@@ -5,6 +5,10 @@ namespace Vlinde\Helper;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use libphonenumber\geocoding\PhoneNumberOfflineGeocoder;
+use libphonenumber\NumberParseException;
+use libphonenumber\PhoneNumberFormat;
+use libphonenumber\PhoneNumberUtil;
 use stdClass;
 
 class Helper
@@ -2576,6 +2580,7 @@ class Helper
         $text = preg_replace('/&#\d*;/', '', $text);
         return $text;
     }
+
     // new
 
     public static function remove_html_special($text)
@@ -2613,6 +2618,7 @@ class Helper
 
 
     }
+
     public static function fill_amenities_array($string, &$dietary_arr, &$features_arr, &$meals_arr, &$categories_arr, $string_sep = ' ')
     {
         //todo fill arrays
@@ -2640,7 +2646,7 @@ class Helper
     }
 
     public static function chineseToUnicode($str)
-    // WIP
+        // WIP
     {
         //split word
         preg_match_all('/./u', $str, $matches);
@@ -2782,4 +2788,71 @@ class Helper
         return null;
     }
 
+    public static function checkPhone(string $phone, string $countryIso2, string $locale = null)
+    {
+        // parse original phone number
+        $phoneUtil = PhoneNumberUtil::getInstance();
+
+        try {
+            $phoneParsed = $phoneUtil->parse($phone, $countryIso2);
+        } catch (NumberParseException $e) {
+            return [
+                'original' => $phone,
+                'new' => null,
+                'description' => null,
+                'country_prefix' => null,
+                'is_valid' => false,
+                'error_message' => $e->getMessage(),
+            ];
+        }
+
+        // get phone prefix
+        $phonePrefix = $phoneParsed->getCountryCode();
+
+        // get new phone number e.g. +40751499223
+        $newPhone = $phoneUtil->format($phoneParsed, PhoneNumberFormat::E164);
+
+        // replace duplicate phone prefix
+//        if (strpos($newPhone, "+$phonePrefix$phonePrefix") !== false) {
+//            $newPhone = str_replace("+$phonePrefix$phonePrefix", "+$phonePrefix", $newPhone);
+//        }
+
+        // replace 0 after phone prefix
+        if (strpos($newPhone, "+{$phonePrefix}0") !== false) {
+            $newPhone = str_replace("+{$phonePrefix}0", "+$phonePrefix", $newPhone);
+        }
+
+        // parse new phone number
+        $newPhoneUtil = PhoneNumberUtil::getInstance();
+
+        try {
+            $newPhoneParsed = $newPhoneUtil->parse($newPhone, $countryIso2);
+        } catch (NumberParseException $e) {
+            return [
+                'original' => $phone,
+                'new' => null,
+                'description' => null,
+                'country_prefix' => null,
+                'is_valid' => false,
+                'error_message' => $e->getMessage()
+            ];
+        }
+
+        $geocoder = PhoneNumberOfflineGeocoder::getInstance();
+
+        $description = null;
+
+        if ($locale) {
+            $description = $geocoder->getDescriptionForValidNumber($newPhoneParsed, $locale);
+        }
+
+        return [
+            'original' => $phone,
+            'new' => $newPhone,
+            'description' => $description,
+            'country_prefix' => $newPhoneUtil->getCountryCodeForRegion($countryIso2),
+            'is_valid' => $newPhoneUtil->isValidNumber($newPhoneParsed),
+            'error_message' => null
+        ];
+    }
 }
