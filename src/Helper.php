@@ -2802,6 +2802,7 @@ class Helper
                 'description' => null,
                 'country_prefix' => null,
                 'is_valid' => false,
+                'is_valid_in_region' => false,
                 'error_message' => $e->getMessage(),
             ];
         }
@@ -2834,6 +2835,7 @@ class Helper
                 'description' => null,
                 'country_prefix' => null,
                 'is_valid' => false,
+                'is_valid_in_region' => false,
                 'error_message' => $e->getMessage()
             ];
         }
@@ -2852,6 +2854,7 @@ class Helper
             'description' => $description,
             'country_prefix' => $newPhoneUtil->getCountryCodeForRegion($countryIso2),
             'is_valid' => $newPhoneUtil->isValidNumber($newPhoneParsed),
+            'is_valid_in_region' => $newPhoneUtil->isValidNumberForRegion($newPhoneParsed, $countryIso2),
             'error_message' => null
         ];
     }
