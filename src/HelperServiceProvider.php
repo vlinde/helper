@@ -11,7 +11,7 @@ class HelperServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         // $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'vlinde');
         // $this->loadViewsFrom(__DIR__.'/../resources/views', 'vlinde');
@@ -29,7 +29,7 @@ class HelperServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/helper.php', 'helper');
 
@@ -41,7 +41,7 @@ class HelperServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function bootForConsole()
+    protected function bootForConsole(): void
     {
         // Publishing the configuration file.
         $this->publishes([

@@ -2788,7 +2788,7 @@ class Helper
         return null;
     }
 
-    public static function checkPhone(string $phone, string $countryIso2, string $locale = null)
+    public static function checkPhone(string $phone, string $countryIso2, ?string $locale = null)
     {
         // parse original phone number
         $phoneUtil = PhoneNumberUtil::getInstance();
